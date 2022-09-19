@@ -57,6 +57,8 @@ g++ -std=c++14 main.cpp
 ## Change Log 更新日志
 目前已发布的最新版本是v0.7.5，详见release
 * v0.7.5 修复大整数乘法的错误并加速，加入最大公因数、素数计数等数论相关的内容，重组头文件
+
+下述更早的历史版本详见旧仓库[numerical library](https://github.com/lambdacdm/numerical-library)的release
 * v0.7.4 删除多线程矩阵乘法，加入分治法LU分解，加入修正的Gram-Schmidt的QR分解，加入解线性方程组的QR分解法，
 修改“改进的欧拉法”的调用名称
 * v0.7.3 加入QR分解与求特征值
