@@ -17,27 +17,30 @@ g++ -std=c++14 main.cpp
 如果对性能有所要求，强烈建议编译时开启优化选项。
 ## Algorithms Used 所用算法
 对于下面列出的各种功能，均使用多种算法予以实现。下面列出的算法只是相应功能调用时的默认算法。
-### 头文件 numbertheory.h 命名空间 nbt
+
+### 快速傅里叶变换库 FFT.h 命名空间 fft
 无文件依赖
+* 提供FFT及NTT支持
+
+### 数论库 numbertheory.h 命名空间 nbt
+依赖快速傅里叶变换库
 * 最大公因数 —— 辗转相除法
 * 素数计数 —— 欧拉筛
+* 素性测试 —— Miller-Rabin算法
+* 找整数的一个因子 —— Polland-Rho算法
 
-### 头文件 FFT.h 命名空间 fft
-无文件依赖
-* 提供快速傅里叶变换（FFT）及快速数论变换（NTT）支持
-
-### 头文件 highprecision.h 命名空间 hpc
-依赖头文件FFT.h
+### 高精度库 highprecision.h 命名空间 hpc
+依赖快速傅里叶变换库
 * 大整数乘法 —— NTT
 * 高精度除法 —— 牛顿迭代法
 
-### 头文件 polynomial.h 命名空间 ply
-依赖头文件FFT.h
+### 多项式库 polynomial.h 命名空间 ply
+依赖快速傅里叶变换库
 * 多项式乘法 —— FFT
 * 多项式求值 —— 秦九韶算法
 
-### 头文件 numerical.h 命名空间 nmr
-依赖头文件polynomial.h
+### 数值库 numerical.h 命名空间 nmr
+依赖多项式库
 * QR分解 —— 修正的Gram-Schmidt正交化
 * 特征值 —— QR算法
 * 线性方程组求解 —— LUP分解
@@ -50,28 +53,31 @@ g++ -std=c++14 main.cpp
 * 求导数 —— 中心差商法
 * 常微分方程(组)求解 —— 预测-校正的Milne-Hamming公式
 
-### 头文件 plot.h 命名空间 plt
-依赖头文件numerical.h
+### 绘图库 plot.h 命名空间 plt
+依赖数值库
 * 提供函数作图支持
 
 ## Change Log 更新日志
-目前已发布的最新版本是v0.7.5，详见release
+目前已发布的最新版本是v0.7.5，详见releases
 * v0.7.5 修复大整数乘法的错误并加速，加入最大公因数、素数计数等数论相关的内容，重组头文件
 
-下述更早的历史版本详见旧仓库[numerical library](https://github.com/lambdacdm/numerical-library)的release
+下述更早的历史版本详见旧仓库[numerical library](https://github.com/lambdacdm/numerical-library)的releases
 * v0.7.4 删除多线程矩阵乘法，加入分治法LU分解，加入修正的Gram-Schmidt的QR分解，加入解线性方程组的QR分解法，
 修改“改进的欧拉法”的调用名称
 * v0.7.3 加入QR分解与求特征值
 * v0.7.2 加入常微分方程组求解与代数方程组求解
 * v0.7.1 首个发布的版本
 
-当前正在进行的工作：
-* 数论算法
-* 加入大整数的取模%、作商/、位与&、位移>> <<
+当前正在进行的工作（重要）：
+* 加入大整数的取模%、作商/、位与&、位移>> <<、平方根与对数
+* 更改矩阵存储方式为一维数组
+
+今后将要进行的工作：
+* 加入更多数论算法
 * 加入SVD分解
 * 优化现有的QR分解算法
 * 完善特征值、特征向量求解系统
 * 完善求范数、求条件数等功能
 * 完善最小二乘法求解系统
 * 加入新的求解常微分方程（组）的方法
-* 图像绘制
+* 完善图像绘制
