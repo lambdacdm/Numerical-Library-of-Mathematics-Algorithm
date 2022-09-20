@@ -1,13 +1,20 @@
 //version 0.7.5
 #include <iostream>
 #include <ctime>
-#include "plot.h"
+#include <chrono>
+#include "numbertheory.h"
 using namespace std;
-using namespace plt;
+using namespace nbt;
 int main()
 {
-    Plot<double>([](double t)
-                         { return sin(t); }, {0.,2*Pi<double>});
+    for (unsigned long long i = 0; i < 1000000;++i)
+    {
+        if (SimplePrimeQ(i)!=MillerRabin(i))
+        {
+            cout << "wrong at " << i << endl;
+            break;
+        }   
+    }
     system("pause");
     return 0;
 }

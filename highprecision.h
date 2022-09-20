@@ -38,6 +38,7 @@ class BigInt
         friend BigInt operator/(const BigInt&, const BigInt&);
         friend BigInt operator^(const BigInt&, int);
         friend BigInt operator^(const BigInt&,unsigned long long);
+        friend BigInt operator++(BigInt &);
         BigInt &operator+=(const BigInt &);
         BigInt &operator-=(const BigInt &);
 
@@ -432,6 +433,10 @@ BigInt operator^(const BigInt &a,unsigned long long n)
         m = m * m;
     }
     return b;
+}
+BigInt operator++(BigInt &a)
+{
+    return a + BigInt("1");
 }
 BigInt &BigInt::operator+=(const BigInt &b)
 {
