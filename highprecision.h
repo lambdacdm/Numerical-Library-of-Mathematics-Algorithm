@@ -4,12 +4,15 @@
 using std::cerr;
 using std::cout;
 using std::ostream;
+using std::pair;
 using std::to_string;
 using namespace fft;
 
 namespace hpc{
 
 //-----声明部分-----
+
+class HighPrecision;
 
 //大整数类
 class BigInt
@@ -31,20 +34,30 @@ class BigInt
         friend bool operator<=(const BigInt&, const BigInt&);
         friend bool operator>=(const BigInt&, const BigInt&);
         friend ostream &operator << (ostream &, const BigInt&);
-        friend BigInt operator>>(const BigInt&, int);
         friend BigInt operator+(const BigInt &,const BigInt&);
         friend BigInt operator-(const BigInt &,const BigInt&);
         friend BigInt operator*(const BigInt &,const BigInt&);
+        friend HighPrecision operator/(const HighPrecision &, const HighPrecision &);
         friend BigInt operator/(const BigInt&, const BigInt&);
+        friend BigInt operator%(const BigInt &, const BigInt &);
+        friend BigInt operator&(const BigInt &, const BigInt &);
         friend BigInt operator^(const BigInt&, int);
         friend BigInt operator^(const BigInt&,unsigned long long);
-        friend BigInt operator++(BigInt &);
+        BigInt &operator++();
         BigInt &operator+=(const BigInt &);
         BigInt &operator-=(const BigInt &);
+        friend BigInt operator<<(const BigInt &,int);
+        friend BigInt operator>>(const BigInt &,int);
+        BigInt &operator<<=(int);
+        BigInt &operator>>=(int);
 
         explicit operator int();
+        explicit operator bool();
+        friend BigInt LeftShift(const BigInt&, int);
+        friend BigInt DivideTwo(const BigInt &);
         friend BigInt Product_NTT(const BigInt &, const BigInt &);
         friend BigInt Product_DivideConquer(const BigInt &, const BigInt &);
+        friend pair<BigInt, BigInt> DivisionAlgorithm(const BigInt &, const BigInt &);
         void Reassign(string );
         void _digitChange(string);
         void _signChange(bool);
@@ -57,7 +70,6 @@ class BigInt
         string _digit;
         bool _sign;
 };
-vector<unsigned long long> CompressBit(const string&, unsigned int);
 
 class HighPrecision: public BigInt
 {
@@ -72,7 +84,6 @@ class HighPrecision: public BigInt
         HighPrecision(double, int);
 
         friend ostream &operator<<(ostream &, const HighPrecision &);
-        friend HighPrecision operator<<(const HighPrecision &,int);
         friend HighPrecision operator+(const HighPrecision &, const HighPrecision &);
         friend HighPrecision operator- (const HighPrecision &);
         friend HighPrecision operator-(const HighPrecision &, const HighPrecision &);
@@ -87,6 +98,8 @@ class HighPrecision: public BigInt
         friend unsigned TotalLength(const HighPrecision &);
         friend unsigned SignificantLength(const HighPrecision &);
         friend HighPrecision SignificantFigure(const HighPrecision &, unsigned);
+        friend HighPrecision LeftShift(const HighPrecision&, int);
+        friend HighPrecision Divide(const HighPrecision &, const HighPrecision &, uint8_t);
 
     private:
         string _decimal;
@@ -220,7 +233,7 @@ ostream & operator<<(ostream & os,const BigInt &a)
     os << GetString(a);
     return os;
 }
-BigInt operator>>(const BigInt &a, int b)
+BigInt LeftShift(const BigInt &a, int b)
 {
     BigInt c = a;
     c._digit.insert(0,b, '0');
@@ -303,6 +316,25 @@ BigInt operator-(const BigInt &a,const BigInt &b)
     r.cutzero();
     return r;
 }
+BigInt DivideTwo(const BigInt &x)
+{
+    BigInt r;
+    r._sign = x._sign;
+    size_t m = x._digit.size();
+    string new_digit(m,'0');
+    int8_t temp=0;
+    for (size_t i = m; i>0;--i)
+    {
+        int8_t current = int8_t(x._digit[i - 1] - '0') + temp*10;
+        new_digit[i - 1] = (current>>1) + '0';
+        temp = current & 1;
+    }
+    r._digit = new_digit;
+    r.cutzero();
+    if(x._sign==false && (int(x._digit[0] - '0') & 1))
+        return r - BigInt("1");
+    return r;
+}
 BigInt Product_DivideConquer(const BigInt &x,const BigInt &y)
 {
     BigInt p = x;
@@ -325,6 +357,7 @@ BigInt Product_DivideConquer(const BigInt &x,const BigInt &y)
         b=to_string(stoull(a) * stoull(b));
         reverse(b.begin(),b.end());
         r._digit = b;
+        r._sign = (x._sign == y._sign);
         return r;
     }
     BigInt p0, p1, q0, q1;
@@ -335,29 +368,13 @@ BigInt Product_DivideConquer(const BigInt &x,const BigInt &y)
     BigInt r0= Product_DivideConquer(p0,q0);
     BigInt r1 = Product_DivideConquer(p1,q1);
     BigInt r2 = Product_DivideConquer((p0 + p1), (q0 + q1));
-    BigInt r=r0 + ((r2 - r0 - r1) >> k) + (r1 >> (k << 1));
+    BigInt r=r0 + LeftShift((r2 - r0 - r1), k) + LeftShift(r1, (k << 1));
+    r._sign = (x._sign == y._sign);
     r.cutzero();
     return r;
 }
 vector<unsigned long long> CompressBit(const string &a_str)
 {
-    /*uint32_t n = a_str.size();
-    uint32_t aq = n/d;
-    uint8_t ar = n%d;
-    vector<unsigned long long> a(aq);
-    string temp;
-    for (uint32_t i = 0; i < a.size();++i)
-    {
-        temp=a_str.substr(i*d, d);
-        reverse(temp.begin(), temp.end());
-        a[i] =stoull(temp);
-    }  
-    if(ar)
-    {
-        temp=a_str.substr(n-ar, ar);
-        reverse(temp.begin(),temp.end());
-        a.push_back(stoull(temp));
-    }*/
     vector<unsigned long long> a(a_str.size());
     std::transform(a_str.begin(), a_str.end(), a.begin(), [](char c)
                    { return c - '0'; });
@@ -365,8 +382,6 @@ vector<unsigned long long> CompressBit(const string &a_str)
 }
 BigInt Product_NTT(const BigInt &x,const BigInt &y)
 {
-    /*if(d>4) d = 4; 
-    const vector<uint32_t> mapping({1, 10, 100, 1000, 10000});*/
     auto rr =IntConvolution(CompressBit(x._digit), CompressBit(y._digit));
     auto r = CarryBit<unsigned long long>(rr, 10);
     return BigInt(BitToString(r), (x._sign == y._sign));
@@ -374,25 +389,91 @@ BigInt Product_NTT(const BigInt &x,const BigInt &y)
 BigInt operator*(const BigInt &x,const BigInt &y)
 {
     uint32_t n=std::max((x._digit).size(),(y._digit).size());
-    /*if (n<=32)
-        return Product_NTT(x, y, uint8_t(4));
-        else if (n<=4096)
-            return Product_NTT(x, y, uint8_t(3));     
-            else if (n<=262144)
-                return Product_NTT(x, y, uint8_t(2));*/
     if (n<=15)
         return Product_DivideConquer(x, y);
     return Product_NTT(x, y);
 }
-BigInt operator/(const BigInt &p,const BigInt &q)
+pair<BigInt,BigInt> DivisionAlgorithm(const BigInt &a,const BigInt &b)
 {
-    if(q==BigInt(0))
+    const uint8_t times = std::max(0., std::ceil(log2(a._digit.size() + 1))-2);
+    BigInt q = Divide(HighPrecision(a), HighPrecision(b), times);
+    BigInt r = a - q * b;
+    if(r<0)
+    {
+        q -= BigInt("1");
+        r += b;
+    }
+    if(r>=b && PositivityTest(b))
+    {
+        q += BigInt("1");
+        r -= b;
+    }
+    return {q,r};
+}
+BigInt operator/(const BigInt &a,const BigInt &b)
+{
+    if(b==BigInt(0))
     {
         cerr << "错误：不能除以0." << '\n';
-        return p;
+        return BigInt(0);
     }
-    //未开发
-    return p;
+    if(a==BigInt(0))
+        return BigInt(0);
+    if(b==BigInt("1"))
+        return a;
+    if(b==BigInt("2"))
+        return DivideTwo(a);
+    return std::get<0>(DivisionAlgorithm(a,b));
+}
+BigInt operator%(const BigInt &a, const BigInt &b)
+{
+    if(b==BigInt(0))
+    {
+        cerr << "错误：不能除以0." << '\n';
+        return BigInt(0);
+    }
+    if(a==BigInt(0))
+        return BigInt(0);
+    if(b==BigInt("1"))
+        return BigInt(0);
+    if(b==BigInt("2"))
+        return BigInt(int(a._digit[0] - '0') & 1);
+    if(b==BigInt("10"))
+        return BigInt(int(a._digit[0] - '0'));
+    if(b==BigInt("5") && PositivityTest(a))
+        return BigInt(int(a._digit[0] - '0') % 5);
+    if(b==BigInt("3") && PositivityTest(a))
+    {
+        int r = 0;
+        for(auto i:a._digit)
+            r = (r + (i - '0')) % 3;
+        return BigInt(r);
+    }
+    if(b==BigInt("9") && PositivityTest(a))
+    {
+        int r = 0;
+        for(auto i:a._digit)
+            r = (r + (i - '0')) % 9;
+        return BigInt(r);
+    }
+    return std::get<1>(DivisionAlgorithm(a,b));
+}
+BigInt operator&(const BigInt &a, const BigInt &b)
+{
+    if(b==BigInt(0) || a==BigInt(0))
+        return BigInt(0);
+    if(b==BigInt("1"))
+        return BigInt(int(a._digit[0] - '0') & 1);
+    if(a==BigInt("1"))
+        return BigInt(int(b._digit[0] - '0') & 1);
+    BigInt r;
+    size_t t = std::min(a._digit.size(), b._digit.size());
+    for (size_t i = 0; i < t;++i)
+    {
+        r._digit[i] = ((a._digit[i] - '0') & (b._digit[i] - '0')) + '0';
+    }
+    r._sign = a._sign & b._sign;
+    return r;
 }
 BigInt operator^(const BigInt &a, int n)
 {
@@ -434,9 +515,10 @@ BigInt operator^(const BigInt &a,unsigned long long n)
     }
     return b;
 }
-BigInt operator++(BigInt &a)
+BigInt &BigInt::operator++()
 {
-    return a + BigInt("1");
+    *this = *this + BigInt("1");
+    return *this;
 }
 BigInt &BigInt::operator+=(const BigInt &b)
 {
@@ -448,6 +530,41 @@ BigInt &BigInt::operator-=(const BigInt &b)
     *this = *this -b;
     return *this;
 }
+BigInt operator<<(const BigInt &a,int n)
+{
+    if (n==0)
+        return a;
+    if (n==1)
+        return (a * BigInt("2"));
+    if (n>1)
+        return a *(BigInt("2") ^ n);
+    return a >> (-n);
+}
+BigInt operator>>(const BigInt &a, int n)
+{
+    if (n==0)
+        return a;
+    if (n==1)
+        return DivideTwo(a);
+    if (n>0)
+    {
+        BigInt b = a;
+        for (int i = 0; i < n;++i)
+            b = DivideTwo(b);
+        return b;
+    }
+    return a << (-n);
+}
+BigInt &BigInt::operator<<=(int n)
+{
+    *this = *this << n;
+    return *this;
+}
+BigInt &BigInt::operator>>=(int n)
+{
+    *this = *this >> n;
+    return *this;
+}
 BigInt::operator int()
 {
     string _str = _digit;
@@ -455,6 +572,12 @@ BigInt::operator int()
     if(_sign)
         return stoi(_str);
     return -stoi(_str);
+}
+BigInt::operator bool()
+{
+    if (_digit == "0")
+        return false;
+    return true;
 }
 void BigInt::Reassign(string str)
 {
@@ -549,7 +672,7 @@ HighPrecision::HighPrecision(double a)
 }
 HighPrecision::HighPrecision(string a,int n)
 {
-   *this=(HighPrecision(a))<<n;
+   *this=LeftShift((HighPrecision(a)),n);
 }
 HighPrecision::HighPrecision(double a,int n)
 {
@@ -568,7 +691,7 @@ ostream &operator<<(ostream &os, const HighPrecision &a)
     os << result;
     return os;
 }
-HighPrecision operator<<(const HighPrecision &a,int n)
+HighPrecision LeftShift(const HighPrecision &a,int n)
 {
     if(n==0)
         return a;
@@ -674,7 +797,7 @@ HighPrecision operator*(const HighPrecision &a, const HighPrecision &b)
     r.CutTail();
     return r;
 }
-HighPrecision operator/(const HighPrecision &a, const HighPrecision &b)
+HighPrecision Divide(const HighPrecision &a, const HighPrecision &b, uint8_t times)
 {
     if(BigInt(b)==0 && b._decimal.size()==0)
     {
@@ -682,25 +805,43 @@ HighPrecision operator/(const HighPrecision &a, const HighPrecision &b)
         return HighPrecision("0");
     }  
     const HighPrecision two("2");
-    const unsigned times = std::max(double(4),std::log2(SignificantLength(b)));
-    int order_b = Order(b);
-    const HighPrecision B = b <<(-order_b);
-    cout << "B=" << B << std::endl;
-    HighPrecision x(100.0/stod(TopKDigit(b,3)));
-    unsigned digitcontrol = 2;
-    if(x._decimal.size()>digitcontrol)
-        x._decimal.erase(0,x._decimal.size()-digitcontrol);
-    for (unsigned i = 0; i < times;++i)
+    int order_b = Order(b); // b = (...something lying in [1,10)...) * 10 ^ (order_b)
+    // shift b to B = b * 10 ^ (order_b), where B lies in [1,10)
+    const HighPrecision B = LeftShift(b,(-order_b)); 
+    // Next we apply Newton's method to compute 1/B.
+    // Note that TopKDigit(b,5) lies in [10^4,10^5).
+    /* So 10^4/TopKDigit(b,5) is a good apporixmate of 1/B, 
+        with accuracy of at least 4 significant figures. */
+    // We thus set it as the inital value.
+    uint32_t accuracy = 4;
+    HighPrecision x(10000. / stod(TopKDigit(b, accuracy + 1)));
+    // We cut off the remaining unnecessary decimal digits.
+    if(SignificantLength(x) > accuracy)
+        x = SignificantFigure(x, accuracy + 1);
+    // Newton's method
+    for (uint8_t i = 0; i < times; ++i)
     {
         x=x*(two-x*B);
+        // under each iteartion, the accuracy of siginificant figures is doubled.
+        accuracy <<= 1;
+        // cut off unnecessary decimal digits
+        if(SignificantLength(x) > accuracy)
+            x = SignificantFigure(x, accuracy + 1);
     }
-    x=(a*x)<<(-order_b);
-    unsigned sflx = SignificantLength(x);
-    if(sflx<=1)
-        return x;
-    x = SignificantFigure(x, sflx >> 1);
+    // After the above iteration, x = 1/B, with accuracy of 2 ^ (times + 2) significant figures
+    x=LeftShift((a*x),(-order_b)); // As a result, a / b = A * (1/B) * 10^ (-order_b) 
+    x._signChange(!(PositivityTest(a) ^ PositivityTest(b)));
     x.CutTail();
     return x;
+}
+HighPrecision operator/(const HighPrecision &a, const HighPrecision &b)
+{
+    const uint8_t times = std::max(1., 
+        std::max(std::ceil(log2(a._digit.size() + 1))-2,std::ceil(log2(b._digit.size() + 1))-2));
+    auto x = Divide(a, b, times);
+    const uint32_t snf = std::max(8u,
+        std::max(a._digit.size(), b._digit.size()));
+    return SignificantFigure(x, snf);
 }
 unsigned DecimalLength(const HighPrecision &a)
 {

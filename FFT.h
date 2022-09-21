@@ -185,25 +185,24 @@ template<class DC> vector<DC> RealConvolution(const vector<DC>&x,const vector<DC
 }
 template<class DC> DC ModPower(DC a,DC n,DC mod)
 {
-    DC m=a;
-    DC b=1;
-    while(n>=1)
+    DC b = 1;
+    while(n >= 1)
     {
-        if(n&1)
+        if(n & 1)
         {
-            b =DC(1)*m*b%mod;
+            b = (a * b) % mod;
         }
-        n>>=1;
-        m=DC(1)*m*m%mod;
+        a = (a * a) % mod;
+        n >>= 1; 
     }
-      return b;
+    return b;
 }
 template<class DC> vector<DC> ModProduct(const vector<DC>& a,const vector<DC> &b,DC mod)
 {
     uint32_t n = a.size()<b.size()?a.size():b.size();
     vector<DC> c(n);
     for (uint32_t i = 0; i < n;++i)
-        c[i] = DC(1)*a[i]*b[i]%mod;
+        c[i] = a[i]*b[i]%mod;
     return c;
 }
 template<class DC> vector<DC> iterative_NTT(const vector<DC>&a,bool _jud)
@@ -227,11 +226,11 @@ template<class DC> vector<DC> iterative_NTT(const vector<DC>&a,bool _jud)
             halfm = m >> 1;
             for (uint32_t j = 0; j < halfm;++j)
             {
-                DC t=DC(1)*omega*A[k+j+halfm]%mod;
+                DC t= omega*A[k+j+halfm]%mod;
                 DC u = A[k + j];
                 A[k+j]=(u+t)%mod;
                 A[k + j + halfm] =(mod+u - t)%mod;
-                omega =DC(1)*omega * omega_m%mod;
+                omega = omega * omega_m%mod;
             }
         }
     }
@@ -239,7 +238,7 @@ template<class DC> vector<DC> iterative_NTT(const vector<DC>&a,bool _jud)
     {
         DC n_inverse=ModPower(DC(n),mod-2,mod);
         for (uint32_t i = 0; i < n;++i)
-            A[i]=DC(1)*A[i]*n_inverse%mod;//这里要乘长度的逆元
+            A[i]=A[i]*n_inverse%mod;//这里要乘长度的逆元
     }
     return A;
 }
