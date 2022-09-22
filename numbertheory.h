@@ -29,7 +29,8 @@ template <class PP> PP PrimePi(PP); //小于等于某个数的素数个数
 
 //素性测试
 template <class PP> pair<PP, PP> Decomposition2Adic(PP); //分解 n=2^q*m
-template <class PP> bool MillerRabin(PP); //Miller-Rabin素性测试
+template <class PP> bool MillerRabin(const PP&, uint8_t); //Miller-Rabin素性测试，可控制次数
+template <class PP> bool MillerRabin(const PP&); //Miller-Rabin素性测试
 template <class PP> bool SimplePrimeQ(PP); //朴素素性测试
 template <class PP> bool PrimeQ(PP, const string &); //素性测试，可调节方法
 template <class PP> bool PrimeQ(PP); //素性测试
@@ -136,22 +137,21 @@ template<class PP> pair<PP,PP> Decomposition2Adic(PP m)
     }
     return std::make_pair(q, m);
 }
-template<class PP> bool Witness(PP a,PP m,PP q,PP n)
+template<class PP> bool Witness(const PP &a, const PP &m, const PP &q, const PP &n)
 {
-    PP x= ModPower(a, m, n);
+    PP x= ModPower<PP>(a, m, n);
+    if (x==1)
+        return true; // possibly prime
     for (PP i = 0; i < q; ++i)
     {
-        PP x_pre = x;
+        if(x==n -1)
+            return true; // possibly prime    
         x = x * x % n;
-        if (x==1 && x_pre!=1 && x_pre!=n-1)
-            return true;
     }
-    if (x!=1)
-        return true;
-    return false;
+    return false; // definitely composite
 }
-template<class PP> bool MillerRabin(PP n)
-{ 
+template<class PP> bool MillerRabin(const PP &n, uint8_t times)
+{
     if(n==2 || n==3 || n==5)
         return true;
     if(n%2==0 || n%3==0 || n%5==0 || n==1)
@@ -160,13 +160,17 @@ template<class PP> bool MillerRabin(PP n)
     PP q = get<0>(p);
     PP m = get<1>(p);
     srand(time(0));
-    for (PP i = 1; i < n; i<<=1) 
+    for (uint32_t i = 0; i < times; ++i) 
     {
         PP a =1+(rand()%(n-1));
-        if(Witness(a,m,q,n))
+        if(!Witness(a,m,q,n))
             return false;   // definitely composite  
     }
-    return true;    // almost surely prime
+    return true;    // almost surely prime, with probability of 1 - 2 ^ (-times)
+}
+template<class PP> bool MillerRabin(const PP &n)
+{
+    return MillerRabin(n, 14u);  // P(really prime | tested prime)>0.9999
 }
 template<class PP> bool SimplePrimeQ(PP n)
 {

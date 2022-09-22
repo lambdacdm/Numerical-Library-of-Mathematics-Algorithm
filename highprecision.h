@@ -878,20 +878,12 @@ string TopKDigit(const HighPrecision &a,unsigned k)
     if(!PositivityTest(a))
         result.push_back('-');
     const string &cat = a._decimal + Get_digit(a);
-    int n = cat.size();
-    unsigned cnt = 0;
-    for (int i = n - 1; i >= 0;--i)
-    {
-        if(cat[i]!='0' && cnt<k)
-        {
-            result.push_back(cat[i]);
-            ++cnt;
-        }
-    }
-    if(cnt<k)
-    {
-        result.insert(result.end(), k - cnt, '0');
-    }
+    unsigned n = cat.size();
+    unsigned m = std::min(k, n);
+    for (unsigned i = 1; i <= m; ++i)
+        result.push_back(cat[n-i]);
+    if(n<k)
+        result.insert(result.end(), k - n, '0');
     return result;
 }
 unsigned TotalLength(const HighPrecision &a)
