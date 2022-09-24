@@ -53,14 +53,20 @@ g++ -std=c++14 main.cpp
 * 求导数 —— 中心差商法
 * 常微分方程(组)求解 —— 预测-校正的Milne-Hamming公式
 
+### 优化库 optimization.h 命名空间 opt
+依赖数值库
+* 线搜索回退法
+* （固定步长的）梯度下降法
+* Barzilar-Borwein 方法
+
 ### 绘图库 plot.h 命名空间 plt
 依赖数值库
 * 提供函数作图支持
 
 ## Change Log 更新日志
 目前已发布的最新版本是v0.7.5，详见releases
-* v0.7.5 修复大整数乘法的错误并加速，加入大整数除法、取模、平方根等操作，
-加入素数计数、素性测试、质因数分解等数论相关的内容，重组头文件
+* v0.7.5 修复大整数乘法的错误并加速，加入大整数除法、取模、平方根等操作，加入素数计数、素性测试、质因数分解等数论相关的内容，
+加入梯度下降法、BB法等优化算法，重组头文件
 
 下述更早的历史版本详见旧仓库[numerical library](https://github.com/lambdacdm/numerical-library)的releases
 * v0.7.4 删除多线程矩阵乘法，加入分治法LU分解，加入修正的Gram-Schmidt的QR分解，加入解线性方程组的QR分解法，
