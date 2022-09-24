@@ -9,6 +9,7 @@
 #include<tuple>
 #include<utility>
 using std::deque;
+using std::function;
 using std::get;
 using std::ios;
 using std::pair;
