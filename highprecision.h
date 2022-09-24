@@ -12,8 +12,6 @@ namespace hpc{
 
 //-----声明部分-----
 
-class HighPrecision;
-
 //大整数类
 class BigInt
 {
@@ -37,7 +35,6 @@ class BigInt
         friend BigInt operator+(const BigInt &,const BigInt&);
         friend BigInt operator-(const BigInt &,const BigInt&);
         friend BigInt operator*(const BigInt &,const BigInt&);
-        friend HighPrecision operator/(const HighPrecision &, const HighPrecision &);
         friend BigInt operator/(const BigInt&, const BigInt&);
         friend BigInt operator%(const BigInt &, const BigInt &);
         friend BigInt operator&(const BigInt &, const BigInt &);
@@ -64,7 +61,10 @@ class BigInt
         friend string Get_digit(const BigInt&);
         friend string GetString(const BigInt &);
         friend bool PositivityTest(const BigInt&);
-        friend unsigned Length(const BigInt &);
+        friend unsigned IntegerLength(const BigInt &);
+        friend BigInt abs(const BigInt &);
+        friend BigInt sqrt(const BigInt &);
+        friend unsigned log2(const BigInt &);
 
     private:
         string _digit;
@@ -97,9 +97,10 @@ class HighPrecision: public BigInt
         friend string TopKDigit(const HighPrecision &,unsigned);
         friend unsigned TotalLength(const HighPrecision &);
         friend unsigned SignificantLength(const HighPrecision &);
-        friend HighPrecision SignificantFigure(const HighPrecision &, unsigned);
+        friend HighPrecision SetSignificantFigure(const HighPrecision &, unsigned, bool);
+        friend HighPrecision SetSignificantFigure(const HighPrecision &, unsigned);
         friend HighPrecision LeftShift(const HighPrecision&, int);
-        friend HighPrecision Divide(const HighPrecision &, const HighPrecision &, uint8_t);
+        friend HighPrecision Divide(const HighPrecision &, const HighPrecision &, uint8_t, uint32_t);
 
     private:
         string _decimal;
@@ -395,8 +396,10 @@ BigInt operator*(const BigInt &x,const BigInt &y)
 }
 pair<BigInt,BigInt> DivisionAlgorithm(const BigInt &a,const BigInt &b)
 {
-    const uint8_t times = std::max(0., std::ceil(log2(a._digit.size() + 1))-2);
-    BigInt q = Divide(HighPrecision(a), HighPrecision(b), times);
+    const uint32_t snf = a._digit.size()>b._digit.size()? 
+        (a._digit.size() -b._digit.size() + 1):1;
+    const uint8_t times = std::max(0., std::ceil(std::log2(snf)) - 2);
+    BigInt q = Divide(HighPrecision(a), HighPrecision(b), times, snf);
     BigInt r = a - q * b;
     if(r<0)
     {
@@ -607,11 +610,66 @@ bool PositivityTest(const BigInt &a)
 {
     return a._sign;
 }
-unsigned Length(const BigInt &a)
+unsigned IntegerLength(const BigInt &a)
 {
     if(a==BigInt(0))
         return 0;
     return a._digit.size();
+}
+BigInt abs(const BigInt &c)
+{
+    return BigInt(c._digit, true);
+}
+BigInt sqrt(const BigInt &c)
+{
+    if(!PositivityTest(c))
+    {
+        std::cerr << "错误：根号下不能是负数。" << std::endl;
+        return 0;
+    }
+    if(c< BigInt("10"))
+    {
+        BigInt c_copy = c;
+        return BigInt(int(std::sqrt(int(c_copy))));
+    }
+    BigInt pre("0");
+    BigInt prepre("0");
+    const size_t length = c._digit.size();
+    string str((length + 1) / 2, '0');
+    if(length & 1)
+    {
+        str[0] = '0' + int(std::sqrt(c._digit[length - 1]-'0'));
+    }
+    else
+    {
+        str[0] = '0' + int(std::sqrt((c._digit[length - 1] - '0') * 10 + (c._digit[length - 2] - '0')));
+    }
+    BigInt x(str);
+    while (x!=pre && x!=prepre)
+    {
+        prepre = pre;
+        pre = x;
+        x = DivideTwo(x + (c / x));
+    }
+    if(x!=pre) // this case happens only if (c+1) is a square
+        return pre > x ? x : pre;
+    return pre;
+}
+unsigned log2(const BigInt &c)
+{
+    if(!PositivityTest(c) || c==BigInt("0"))
+    {
+        std::cerr << "错误：只有正数才能取对数。" << std::endl;
+        return 0;
+    }
+    unsigned i = 0;
+    BigInt a = c;
+    while(a)
+    {
+        a = DivideTwo(a);
+        ++i;
+    }
+    return (i - 1);
 }
 
 HighPrecision HighPrecision::CutTail()
@@ -797,11 +855,11 @@ HighPrecision operator*(const HighPrecision &a, const HighPrecision &b)
     r.CutTail();
     return r;
 }
-HighPrecision Divide(const HighPrecision &a, const HighPrecision &b, uint8_t times)
+HighPrecision Divide(const HighPrecision &a, const HighPrecision &b, uint8_t times, uint32_t snf)
 {
     if(BigInt(b)==0 && b._decimal.size()==0)
     {
-        cerr << "错误：除以0" << '\n';
+        cerr << "错误：不能除以0" << '\n';
         return HighPrecision("0");
     }  
     const HighPrecision two("2");
@@ -814,34 +872,33 @@ HighPrecision Divide(const HighPrecision &a, const HighPrecision &b, uint8_t tim
         with accuracy of at least 4 significant figures. */
     // We thus set it as the inital value.
     uint32_t accuracy = 4;
-    HighPrecision x(10000. / stod(TopKDigit(b, accuracy + 1)));
-    // We cut off the remaining unnecessary decimal digits.
-    if(SignificantLength(x) > accuracy)
-        x = SignificantFigure(x, accuracy + 1);
+    HighPrecision x(10000. / stod(TopKDigit(b, 5)));
     // Newton's method
     for (uint8_t i = 0; i < times; ++i)
     {
+        x = SetSignificantFigure(x, accuracy + 1, false); // cut off unnecessary decimal digits
         x=x*(two-x*B);
-        // under each iteartion, the accuracy of siginificant figures is doubled.
-        accuracy <<= 1;
-        // cut off unnecessary decimal digits
-        if(SignificantLength(x) > accuracy)
-            x = SignificantFigure(x, accuracy + 1);
+        accuracy <<= 1; // under each iteartion, the accuracy of siginificant figures is doubled.
     }
     // After the above iteration, x = 1/B, with accuracy of 2 ^ (times + 2) significant figures
-    x=LeftShift((a*x),(-order_b)); // As a result, a / b = A * (1/B) * 10^ (-order_b) 
+    x = SetSignificantFigure(x, std::min(snf, accuracy) + 1, false); 
+    x = LeftShift((a*x),(-order_b)); // As a result, a / b = A * (1/B) * 10^ (-order_b) 
     x._signChange(!(PositivityTest(a) ^ PositivityTest(b)));
     x.CutTail();
     return x;
 }
+HighPrecision NDivide(const HighPrecision &a, const HighPrecision &b, uint32_t snf)
+{
+    if(snf == 0)
+        return HighPrecision("0");
+    const uint8_t times = std::max(0., std::ceil(std::log2(snf)) - 2);
+    return SetSignificantFigure(Divide(a, b, times, snf), snf, true);
+}
 HighPrecision operator/(const HighPrecision &a, const HighPrecision &b)
 {
-    const uint8_t times = std::max(1., 
-        std::max(std::ceil(log2(a._digit.size() + 1))-2,std::ceil(log2(b._digit.size() + 1))-2));
-    auto x = Divide(a, b, times);
     const uint32_t snf = std::max(8u,
-        std::max(a._digit.size(), b._digit.size()));
-    return SignificantFigure(x, snf);
+        std::max(SignificantLength(a), SignificantLength(b)));
+    return NDivide(a, b, snf);
 }
 unsigned DecimalLength(const HighPrecision &a)
 {
@@ -864,7 +921,7 @@ int Order(const HighPrecision &a)
 {
     const BigInt &intpart=BigInt(a);
     if(intpart!=BigInt("0"))
-        return Length(a)-1;
+        return IntegerLength(a)-1;
     return -(a._decimal.size());
 }
 string TopKDigit(const HighPrecision &a,unsigned k)
@@ -890,7 +947,7 @@ unsigned TotalLength(const HighPrecision &a)
 {
     if(BigInt(a)==BigInt(0) && a._decimal.size()==0)
         return 0;
-    return Length(a) + a._decimal.size();
+    return IntegerLength(a) + a._decimal.size();
 }
 unsigned SignificantLength(const HighPrecision & a)
 {
@@ -913,30 +970,59 @@ unsigned SignificantLength(const HighPrecision & a)
         }
     return rght - lft + 1;
 }
-HighPrecision SignificantFigure(const HighPrecision &a, unsigned n)
+HighPrecision SetSignificantFigure(const HighPrecision &a, unsigned snf, bool round)
 {
+    if(snf == 0)
+        return HighPrecision("0");
     string str=a._decimal+Get_digit(a);
-    int len= str.size();
+    const unsigned len= str.size();
     unsigned d=len;
-    for (int i = len - 1; i >= 0;--i)
+    for (int i = len - 1; i >= 0;--i) // find the highest non-zero position
         if(str[i]!='0')
         {
             d=i;
             break;
         }
-    if(d<0)
+    if(d==len)
         return HighPrecision("0");
-    if(d<n)
+    if(d<snf)
         return a;
-    for (int i = d-n; i >= 0;--i)
-        str[i] = '0';
-    int decilen = a._decimal.size();
+    unsigned d_minus_snf_plus_one = d - snf + 1;
+    if(round && str[d-snf]>='5') // 四舍五入
+    {
+        unsigned i = d_minus_snf_plus_one;
+        while (i <= d)
+        {
+            if(str[i]<'9')
+            {
+                str[i] = str[i] + 1;
+                break;
+            }
+            str[i] = '0';
+            ++i;
+        }
+        if(i == d+1)
+        {
+            if(i<len) 
+                str[i] = '1';
+            else
+                str.push_back('1'); 
+        }
+    }
+    unsigned decilen = a._decimal.size();
     HighPrecision r;
-    r._decimal=str.substr(0,decilen);
+    if(d_minus_snf_plus_one<decilen)
+        r._decimal=str.substr(d_minus_snf_plus_one,decilen-d_minus_snf_plus_one);
+    for (unsigned i = decilen; i < d_minus_snf_plus_one; ++i)
+        str[i] = '0';
     r._digitChange(str.substr(decilen));
     r._signChange(PositivityTest(a));
     r.CutTail();
     return r;
+}
+HighPrecision SetSignificantFigure(const HighPrecision &a, unsigned snf)
+{
+    return SetSignificantFigure(a, snf, true);
 }
 
 //杂例II
