@@ -45,6 +45,7 @@ public:
     Matrix();
     Matrix(DM);
     Matrix(int,int);
+    Matrix(DM, int, int);
     Matrix(const vector<vector<DM>>&, int, int);
     Matrix(const vector<vector<DM>>&);
     Matrix(const vector<vector<DM>> &, const char[]);
@@ -280,6 +281,16 @@ template<class DB> Matrix<DB>::Matrix(int r,int c)
     row_num=r;
     column_num=c;
     vector<DB> rr(c);
+    for(int i=0;i<r;++i)
+    {
+        value.push_back(rr);
+    }
+}
+template<class DB> Matrix<DB>::Matrix (DB a,int r,int c)
+{
+    row_num=r;
+    column_num=c;
+    vector<DB> rr(c, a);
     for(int i=0;i<r;++i)
     {
         value.push_back(rr);
@@ -796,6 +807,31 @@ template<class DB> void _MatProd(const Matrix<DB> &A,const Matrix<DB> &B,Matrix<
     t5.join();t6.join();t7.join();t8.join();
     return ColumnCat(RowCat(LULU+RULD,LURU+RURD),RowCat(LDLU+RDLD,LDRU+RDRD));
 }*/
+
+//函数形式转换
+template <class OT, class IT> function<OT(Matrix<IT>)> MatrizeInput(const function<OT(IT)> &f)
+{
+    return [&](Matrix<IT> M)
+    { return f(Get(M, 0, 0)); };
+}
+template <class OT, class IT> function<OT(Matrix<IT>)> MatrizeInputs
+(const function<OT(IT,IT)> &f)
+{
+    return [&](Matrix<IT> M)
+    { return f(Get(M, 0, 0), Get(M, 1, 0)); };
+}
+template <class OT, class IT> function<OT(Matrix<IT>)> MatrizeInputs
+(const function<OT(IT,IT,IT)> &f)
+{
+    return [&](Matrix<IT> M)
+    { return f(Get(M, 0, 0), Get(M, 1, 0), Get(M, 2, 0)); };
+}
+template <class OT, class IT> function<OT(Matrix<IT>)> MatrizeInputs
+(const function<OT(IT,IT,IT,IT)> &f)
+{
+    return [&](Matrix<IT> M)
+    { return f(Get(M, 0, 0), Get(M, 1, 0), Get(M, 2, 0), Get(M, 3, 0)); };
+}
 
 //迹、向量范数
 template <class DB> DB Trace(const Matrix<DB> &a)
@@ -1455,13 +1491,43 @@ template <class DB> Matrix<DB> SchurForm(const Matrix<DB> &A)
     _SchurControl(A,Acur,EV,false);
     return Acur;
 }
-template <class DB> vector<DB> EigenValue(const Matrix<DB> &A)
+template <class DB> DB RayleighQuotient(const Matrix<DB> &A, const Matrix<DB> &x)
+{
+    Matrix<DB> xT = Transpose<DB>(x);
+    return Get(xT * A * x, 0, 0) / Get(xT * x, 0, 0);
+}
+template <class DB> pair<DB,Matrix<DB>> PowerIteration(const Matrix<DB> &A, 
+const Matrix<DB> &initial_eigenvector, DB epsilon)
+{
+    Matrix<DB> eigenvector = initial_eigenvector;
+    DB eigenvalue = RayleighQuotient(A, eigenvector);
+    while(Norm(A*eigenvector-eigenvalue*eigenvector,"Frobenius")>epsilon)
+    {
+        eigenvector = A * eigenvector;
+        eigenvector = eigenvector / Norm(eigenvector, "Frobenius");
+        eigenvalue =  RayleighQuotient(A, eigenvector);
+    }
+    return {eigenvalue, eigenvector};
+}
+template <class DB> pair<DB,Matrix<DB>> PowerIteration(const Matrix<DB> &A)
+{
+    return PowerIteration(A, Matrix<DB>(DB(1), ColumnSize(A), 1), DB(1e-7));
+}
+template <class DB> DB DominatingEigenvalue(const Matrix<DB> &A)
+{
+    return std::get<0>(PowerIteration(A));
+}
+template <class DB> Matrix<DB> DominatingEigenvector(const Matrix<DB> &A)
+{
+    return std::get<1>(PowerIteration(A));
+}
+template <class DB> vector<DB> Eigenvalues(const Matrix<DB> &A)
 {
     return Diagonal(SchurForm(A));
 }
-template<class DB> Matrix<DB> EigenValueMatrix(const Matrix<DB> &A)
+template<class DB> Matrix<DB> EigenvalueMatrix(const Matrix<DB> &A)
 {
-    return DiagonalMatrix(EigenValue(A));
+    return DiagonalMatrix(Eigenvalues(A));
 }
 template<class DB> vector<Matrix<DB>> Decomposition(const Matrix<DB> &A,string str)
 {
@@ -1863,7 +1929,7 @@ template<class DB> Matrix<DB> operator^(const Matrix<DB> &a,int n)
 //范数、条件数
 template <class DB> DB SpectralRadius(const Matrix<DB> &a)
 {
-    auto v=EigenValue(a);
+    auto v=Eigenvalues(a);
     DB maximum = DB(0);
     for(auto item:v)
     {
