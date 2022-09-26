@@ -89,3 +89,8 @@ g++ -std=c++14 main.cpp
 * 完善求范数、求条件数等功能
 * 完善最小二乘法求解系统
 * 加入新的求解常微分方程（组）的方法
+
+## License 许可声明
+本仓库遵循 GPL-3.0 license 许可。
+
+一个例外是，本仓库中那些属于旧仓库[numerical library](https://github.com/lambdacdm/numerical-library)的代码部分不受任何许可要求。
