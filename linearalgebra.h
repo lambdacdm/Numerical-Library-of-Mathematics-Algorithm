@@ -117,28 +117,6 @@ public:
     template <class DB> friend DB Norm(const Matrix<DB>&, string);
     template <class DB> friend double Cond(const Matrix<DB>&, double);
     template <class DB> friend double Cond(const Matrix<DB>&, string);
-    //插值
-    /*template <class DB> friend vector<std::function<DB(DB)>> LagrangeBasis(const Matrix<DB> &);
-    template <class DB> friend DB LBasisToInterp(const vector<std::function<DB(DB)>>&,const Matrix<DB> &,DB);
-    template <class DB> friend Matrix<DB> DifferenceQuotientTable(const Matrix<DB> &);
-    template <class DB> friend Matrix<DB> DividedDifferenceTable(const Matrix<DB> &);
-    template <class DB> friend DB DifferenceQuotient(const Matrix<DB> &);
-    template <class DB> friend DB DifferenceQuotient(std::function<DB(DB)>, const Matrix<DB> &);
-    template <class DB> friend DB DQTableToInterp(const Matrix<DB> &, const Matrix<DB> &,DB);
-    template <class DB> friend DB DDTableToInterp(const Matrix<DB> &, const Matrix<DB> &,DB);
-    template <class DB> friend DB _2P3DHermiteInterp(const Matrix<DB> &,int i,int j,DB);
-    template <class DB> friend DB _3P3DHermiteInterp(const Matrix<DB> &,DB);
-    template <class DE> friend Matrix<DE> SplineSlope(const Matrix<DE> &);
-    template <class DE> friend DE Interpolation(const Matrix<DE> &,DE,string);
-    template <class DE> friend DE Interpolation(const Matrix<DE> &,DE);
-    template <class DE> friend Matrix<DE> Interpolation(const Matrix<DE> &A, const Matrix<DE> &x, string);
-    template <class DE> friend std::function<DE(DE)> Interpolation(const Matrix<DE> &,string);
-    //拟合与逼近
-    template <class DB> friend Matrix<DB> PseudoInverse(const Matrix<DB>&);
-    template <class DB> friend Matrix<DB> LeastSquares(const Matrix<DB>&, const Matrix<DB>&);
-    template <class DB> friend Polynomial<DB> PolyFit(const Matrix<DB> &, const vector<Polynomial<DB>> &);
-    template <class DB> friend Polynomial<DB> PolyFit(const Matrix<DB>&,int);
-    template <class DB> friend Polynomial<DB> PolyFit(std::function<DB(DB)>,const vector<Polynomial<DB>>&,DB,DB);*/
 private:
     vector<vector<DM>> value;
     int row_num;
