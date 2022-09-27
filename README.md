@@ -59,6 +59,7 @@ g++ -std=c++14 main.cpp
 * 定积分 —— Romberg算法
 
 ### 常微分方程库 ODE.h 命名空间 ode
+依赖数值库
 * 常微分方程(组)求解 —— 预测-校正的Milne-Hamming公式
 
 ### 优化库 optimization.h 命名空间 
