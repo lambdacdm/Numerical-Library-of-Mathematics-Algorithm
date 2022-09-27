@@ -2016,7 +2016,7 @@ template <class DB> double Cond(const Matrix<DB> &a, string str)
 //插值
 template <class DB> vector<std::function<DB(DB)>> LagrangeBasis(const Matrix<DB> &A)
 {
-    int n = A.row_num;
+    int n = RowSize(A);
     vector<std::function<DB(DB)>> r;
     std::function<DB(DB)> f;
     for (int i = 0; i <n;++i)
@@ -2026,13 +2026,13 @@ template <class DB> vector<std::function<DB(DB)>> LagrangeBasis(const Matrix<DB>
             DB s2=DB(1);
             for (int j = 0; j < i;++j)
             {
-                s1=s1*(x-A.value[j][0]);
-                s2=s2*(A.value[i][0] - A.value[j][0]);
+                s1=s1*(x-A(j,0));
+                s2=s2*(A(i,0) - A(j,0));
             }
             for (int j = i + 1;j<n;++j)
             {
-                s1=s1*(x-A.value[j][0]);
-                s2=s2*(A.value[i][0] - A.value[j][0]);
+                s1=s1*(x-A(j,0));
+                s2=s2*(A(i,0) - A(j,0));
             }
             return s1 / s2;
         };
@@ -2042,84 +2042,84 @@ template <class DB> vector<std::function<DB(DB)>> LagrangeBasis(const Matrix<DB>
 }
 template <class DB> DB LBasisToInterp(const vector<std::function<DB(DB)>> &lb,const Matrix<DB> &A,DB x)
 {
-    int n = A.row_num;
+    int n = RowSize(A);
     DB s = lb[0](x) * A.value[0][1];
     for (int i = 1; i < n;++i)
     {
-        s += lb[i](x) * A.value[i][1];
+        s += lb[i](x) * A(i,1);
     }
     return s;
 }
 template <class DB> Matrix<DB> DifferenceQuotientTable(const Matrix<DB> & A)
 {
-    int n = A.row_num;
+    int n = RowSize(A);
     Matrix<DB> table(n,n);
     for (int i = 0; i < n;++i)
-        table.value[i][0] = A.value[i][1];
+        table(i,0) = A(i,1);
     for (int j = 1; j <n;++j)
     {
         for (int i = j; i < n;++i)
         {
-            table.value[i][j] =(table.value[i][j-1]-table.value[i-1][j-1])/(A.value[i][0]-A.value[i-j][0]);
+            table(i,j) =(table(i,j-1)-table(i-1,j-1))/(A(i,0)-A(i-j,0));
         }
     }
     return table;
 }
 template <class DB> Matrix<DB> DividedDifferenceTable(const Matrix<DB> &A)
 {
-    int data_num= A.row_num;
+    int data_num= RowSize(A);
     int der_deg = A.column_num-1;
     int n = data_num * der_deg;
     int factorial = 1;
     vector<DB> z(n);
     for (int i = 0; i <n;++i)
-        z[i] = A.value[i / der_deg][0];
+        z[i] = A(i/der_deg,0);
     Matrix<DB> table(n, n);
     for (int j = 0; j <der_deg;++j)
     {
         for (int i = j; i < n;++i)
         {
             if((i%der_deg)<j)
-                table.value[i][j]=(table.value[i][j-1]-table.value[i-1][j-1])/(z[i]-z[i-j]);
+                table(i,j)=(table(i,j-1)-table(i-1,j-1))/(z[i]-z[i-j]);
             else
-                table.value[i][j] = A.value[i / der_deg][j + 1]/factorial;
+                table(i,j) = A(i/der_deg, j+1)/factorial;
         }
         factorial = factorial * (j + 1);
     }
     for(int j=der_deg;j<n;++j)
         for (int i = j; i < n;++i)
-            table.value[i][j]=(table.value[i][j-1]-table.value[i-1][j-1])/(z[i]-z[i-j]);
+            table(i,j)=(table(i,j-1)-table(i-1,j-1))/(z[i]-z[i-j]);
     return table;
 }
 template <class DB> DB DifferenceQuotient(const Matrix<DB> &A)
 {
-    int n = A.row_num;
+    int n = RowSize(A);
     return DifferenceQuotientTable(A).value[n-1][n-1];
 }
 template <class DB> DB DifferenceQuotient(std::function<DB(DB)> f, const Matrix<DB> &x)
 {
-    int n = x.row_num;
+    int n = RowSize(x);
     Matrix<DB> A(n,2);
     for (int i = 0; i < n;++i)
     {
-        A.value[i][0] = x.value[i][0];
-        A.value[i][1] = f(x.value[i][0]);
+        A(i,0) = x(i,0);
+        A(i,1) = f(x(i,0));
     }
     return DifferenceQuotient(A);
 }
 template <class DB> DB DQTableToInterp(const Matrix<DB> &A, const Matrix<DB> &table,DB x)
 {
-    int n = A.row_num;
-    DB s = table.value[n - 1][n - 1];
+    int n = RowSize(A);
+    DB s = table(n-1,n-1);
     for (int i = n - 2; i >= 0;--i)
     {
-        s = table.value[i][i] + (x -A.value[i][0]) * s;
+        s = table.value[i][i] + (x -A(i,0)) * s;
     }
     return s;
 }
 template <class DB> DB DDTableToInterp(const Matrix<DB> &A, const Matrix<DB> &table,DB x)
 {
-    int data_num = A.row_num;
+    int data_num = RowSize(A);
     int der_deg=A.column_num-1;
     int n = data_num * der_deg;
     vector<DB> nest(n);
@@ -2133,12 +2133,12 @@ template <class DB> DB DDTableToInterp(const Matrix<DB> &A, const Matrix<DB> &ta
 }
 template <class DE> DE _2P3DHermiteInterp(const Matrix<DE> &M,int i,int j,DE x)
 {
-    DE l0x = (x-M.value[j][0]) / (M.value[i][0] - M.value[j][0]);
-    DE l1x = (x - M.value[i][0]) / (M.value[j][0] - M.value[i][0]);
+    DE l0x = (x-M(j,0)) / (M(i,0) - M(j,0));
+    DE l1x = (x - M(i,0)) / (M(j,0) - M(i,0));
     DE l0x2 = l0x * l0x;
     DE l1x2 = l1x * l1x;
-    return M.value[i][1] * (1 + 2 * l1x) * l0x2 + M.value[j][1] * (1 + 2 * l0x) * l1x2 +
-           M.value[i][2] * (x - M.value[i][0]) * l0x2 + M.value[j][2] * (x - M.value[j][0]) *l1x2;
+    return M(i,1) * (1 + 2 * l1x) * l0x2 + M.value[j][1] * (1 + 2 * l0x) * l1x2 +
+           M.value[i][2] * (x - M(i,0)) * l0x2 + M.value[j][2] * (x - M(j,0)) *l1x2;
 }
 template <class DE> DE _3P3DHermiteInterp(const Matrix<DE> &M,DE x)
 {
@@ -2151,7 +2151,7 @@ template <class DE> DE _3P3DHermiteInterp(const Matrix<DE> &M,DE x)
 }
 template <class DE> Matrix<DE> SplineSlope(const Matrix<DE> &A)
 {
-    int n = A.row_num;
+    int n = RowSize(A);
     vector<DE> h(n);
     vector<DE> lambda(n);
     vector<DE> mu(n);
@@ -2176,7 +2176,7 @@ template <class DE> Matrix<DE> SplineSlope(const Matrix<DE> &A)
 }
 template <class DE> DE Interpolation(const Matrix<DE> &A,DE x,string str)
 {
-    if(A.row_num<2)
+    if(RowSize(A)<2)
     {
         cerr << "错误：至少需要两个点才能插值" << '\n';
         return x;
@@ -2204,7 +2204,7 @@ template <class DE> DE Interpolation(const Matrix<DE> &A,DE x,string str)
     }
     if(str=="linear" || str=="piecewise Lagrange")
     {
-        int n = A.row_num;
+        int n = RowSize(A);
         int k= 1;
         while(k<n)
         {
@@ -2220,11 +2220,11 @@ template <class DE> DE Interpolation(const Matrix<DE> &A,DE x,string str)
     }
     if(str=="pchip" || str=="piecewise Hermite")
     {
-        int n = A.row_num;
+        int n = RowSize(A);
         int i = 1;
         while(i<n)
         {
-            if(x<A.value[i][0])
+            if(x<A(i,0))
                 return _2P3DHermiteInterp(A,i-1,i, x);
             ++i;
         }
@@ -2232,7 +2232,7 @@ template <class DE> DE Interpolation(const Matrix<DE> &A,DE x,string str)
     }
     if(str=="spline")
     {
-        int n = A.row_num;
+        int n = RowSize(A);
         int k= 1;
         const Matrix<DE> &m = SplineSlope(A);
         Matrix<DE> B(2, 3);
@@ -2244,7 +2244,7 @@ template <class DE> DE Interpolation(const Matrix<DE> &A,DE x,string str)
                 {
                     B.value[i][2] = m.value[k - 1 + i][0];
                     for (int j = 0; j < 2;++j)
-                        B.value[i][j] = A.value[k - 1 + i][j];
+                        B(i,j) = A.value[k - 1 + i][j];
                 }
                 return _2P3DHermiteInterp(B, 0, 1, x);
             }               
@@ -2254,7 +2254,7 @@ template <class DE> DE Interpolation(const Matrix<DE> &A,DE x,string str)
         {
             B.value[i][2] = m.value[n-2+i][0];
             for (int j = 0; j < 2;++j)
-                B.value[i][j] = A.value[n-2+ i][j];
+                B(i,j) = A.value[n-2+ i][j];
         }
         return _2P3DHermiteInterp(B, 0, 1, x);
     }
@@ -2269,7 +2269,7 @@ template <class DE> DE Interpolation(const Matrix<DE> &A,DE x)
 }
 template <class DE> Matrix<DE> Interpolation(const Matrix<DE> &A,const Matrix<DE> &x,string str)
 {
-    if(A.row_num<2)
+    if(RowSize(A)<2)
     {
         cerr << "错误：至少需要两个点才能插值" << '\n';
         return x;
@@ -2282,52 +2282,52 @@ template <class DE> Matrix<DE> Interpolation(const Matrix<DE> &A,const Matrix<DE
     if(str=="Lagrange")
     {
         vector<std::function<DE(DE)>> L = LagrangeBasis(A);
-        Matrix<DE> s(x.row_num, 1);
-        for (int i = 0; i < x.row_num;++i)
-            s.value[i][0] = LBasisToInterp(L, A, x.value[i][0]);
+        Matrix<DE> s(RowSize(x), 1);
+        for (int i = 0; i < RowSize(x);++i)
+            s(i,0) = LBasisToInterp(L, A, x(i,0));
         return s;
     }
     if(str=="Newton")
     {
         Matrix<DE> D = DifferenceQuotientTable(A);
-        Matrix<DE> s(x.row_num, 1);
-        for (int i = 0; i < x.row_num;++i)
-            s.value[i][0] = DQTableToInterp(A, D, x.value[i][0]);
+        Matrix<DE> s(RowSize(x), 1);
+        for (int i = 0; i < RowSize(x);++i)
+            s(i,0) = DQTableToInterp(A, D, x(i,0));
         return s;
     }
     if(str=="Hermite")
     {
         Matrix<DE> D = DividedDifferenceTable(A);
-        Matrix<DE> s(x.row_num, 1);
-        for (int i = 0; i < x.row_num;++i)
-            s.value[i][0] = DDTableToInterp(A, D, x.value[i][0]);
+        Matrix<DE> s(RowSize(x), 1);
+        for (int i = 0; i < RowSize(x);++i)
+            s(i,0) = DDTableToInterp(A, D, x(i,0));
         return s;
     }
     if(str=="non-standard Hermite")
     {
-        Matrix<DE> s(x.row_num,1);
-        for (int i = 0; i < x.row_num;++i)
-            s.value[i][0] = _3P3DHermiteInterp(A, x.value[i][0]);
+        Matrix<DE> s(RowSize(x),1);
+        for (int i = 0; i < RowSize(x);++i)
+            s(i,0) = _3P3DHermiteInterp(A, x(i,0));
         return s;
     }
     if(str=="linear" || str=="piecewise Lagrange")
     {
-        int n = A.row_num;
-        Matrix<DE> s(x.row_num, 1);
+        int n = RowSize(A);
+        Matrix<DE> s(RowSize(x), 1);
         int k= 1;
         int j = 0;
-        while(j<x.row_num && k<n)
+        while(j<RowSize(x) && k<n)
         {
-            if(x.value[j][0]<A.value[k][0])
+            if(x(j,0)<A.value[k][0])
             {
-                s.value[j][0]=A.value[k - 1][1] * (x.value[j][0]- A.value[k][0]) / (A.value[k - 1][0] - A.value[k][0]) + 
-                       A.value[k][1] * (x.value[j][0] - A.value[k-1][0]) / (A.value[k][0] - A.value[k - 1][0]);
+                s(j,0)=A.value[k - 1][1] * (x(j,0)- A.value[k][0]) / (A.value[k - 1][0] - A.value[k][0]) + 
+                       A.value[k][1] * (x(j,0) - A.value[k-1][0]) / (A.value[k][0] - A.value[k - 1][0]);
                 ++j;
                 continue;
             }
             ++k;
         }
-        for (int t = j; t < x.row_num;++t)
+        for (int t = j; t < RowSize(x);++t)
         {
             s.value[t][0] =A.value[n-2][1]*(x.value[t][0]-A.value[n-2][0])/(A.value[n-2][0]-A.value[n-1][0])+
                A.value[n-1][1]*(x.value[t][0]-A.value[n-2][0])/(A.value[n-1][0]-A.value[n-2][0]);
@@ -2336,55 +2336,55 @@ template <class DE> Matrix<DE> Interpolation(const Matrix<DE> &A,const Matrix<DE
     }
     if(str=="pchip" || str=="piecewise Hermite")
     {
-        int n = A.row_num;
-        Matrix<DE> s(x.row_num, 1);
+        int n = RowSize(A);
+        Matrix<DE> s(RowSize(x), 1);
         int i=1;
         int j = 0;
-        while(j<x.row_num && i<n)
+        while(j<RowSize(x) && i<n)
         {
-            if(x.value[j][0]<A.value[i][0])
+            if(x(j,0)<A(i,0))
             {
-                s.value[j][0] = _2P3DHermiteInterp(A,i-1,i, x.value[j][0]);
+                s(j,0) = _2P3DHermiteInterp(A,i-1,i, x(j,0));
                 ++j;
                 continue;
             }
             ++i;
         }
-        for (int t = j; t < x.row_num;++t)
+        for (int t = j; t < RowSize(x);++t)
             s.value[t][0] = _2P3DHermiteInterp(A,n-2,n-1, x.value[t][0]);
         return s;
     }
     if(str=="spline")
     {
-        int n = A.row_num;
-        Matrix<DE> s(x.row_num, 1);
+        int n = RowSize(A);
+        Matrix<DE> s(RowSize(x), 1);
         int k= 1;
         int j = 0;
         const Matrix<DE> &m = SplineSlope(A);
         Matrix<DE> B(2, 3);
-        while(j<x.row_num && k<n)
+        while(j<RowSize(x) && k<n)
         {
-            if(x.value[j][0]<A.value[k][0])
+            if(x(j,0)<A.value[k][0])
             {
                 for (int i = 0; i < 2;++i)
                 {
                     B.value[i][2] = m.value[k - 1 + i][0];
                     for (int j = 0; j < 2;++j)
-                        B.value[i][j] = A.value[k - 1 + i][j];
+                        B(i,j) = A.value[k - 1 + i][j];
                 }
-                s.value[j][0] = _2P3DHermiteInterp(B, 0, 1, x.value[j][0]);
+                s(j,0) = _2P3DHermiteInterp(B, 0, 1, x(j,0));
                 ++j;
                 continue;
             }
             ++k;
         }
-        for (int t = j; t < x.row_num;++t)
+        for (int t = j; t < RowSize(x);++t)
         {
             for (int i = 0; i < 2;++i)
             {
                 B.value[i][2] = m.value[n-2+i][0];
                 for (int j = 0; j < 2;++j)
-                    B.value[i][j] = A.value[n-2+ i][j];
+                    B(i,j) = A.value[n-2+ i][j];
             }
             s.value[t][0]=_2P3DHermiteInterp(B, 0, 1, x.value[t][0]);
         }
@@ -3007,14 +3007,14 @@ template <class DB> Polynomial<DB> PolyFit(const Matrix<DB> &data, const vector<
     {
         for (int j = 0;j<n;++j)
         {
-            A.value[i][j] =Get(phi[j],data.value[i][0]);
+            A(i,j) =Get(phi[j],data(i,0));
         }
-        y.value[i][0] = data.value[i][1];
+        y(i,0) = data(i,1);
     }
     const Matrix<DB> &c = LeastSquares(A, y);
     vector<DB> r(n);
     for (int i = 0; i <n;++i)
-        r[i]=c.value[i][0];
+        r[i]=c(i,0);
     return Polynomial<DB>(r);
 }
 template <class DB> Polynomial<DB> PolyFit(const Matrix<DB> &xy,int deg)
@@ -3029,17 +3029,17 @@ template <class DB> Polynomial<DB> PolyFit(const Matrix<DB> &xy,int deg)
     Matrix<DB> b(n, 1);
     for (int i = 0; i < n;++i)
     {
-        b.value[i][0] = xy.value[i][1];
-        A.value[i][0] = 1;
+        b(i,0) = xy(i,1);
+        A(i,0) = 1;
         for(int j=1;j<=deg;++j)
         {
-            A.value[i][j] = A.value[i][j - 1] * xy.value[i][0];
+            A(i,j) = A.value[i][j - 1] * xy(i,0);
         }
     }
     const Matrix<DB> &c=LeastSquares(A, b);
     vector<DB> r;
     for (int i = 0; i <= deg;++i)
-        r.push_back(c.value[i][0]);
+        r.push_back(c(i,0));
     Polynomial<DB> f(r);
     return f;
 }
@@ -3060,7 +3060,7 @@ template <class DB> Polynomial<DB> PolyFit(std::function<DB(DB)> f,const vector<
     const Matrix<DB> &c = LinearSolve(Gram, B);
     vector<DB> r(n);
     for (int i = 0; i <n;++i)
-        r[i]=c.value[i][0];
+        r[i]=c(i,0);
     return Polynomial<DB>(r);
 
 }
