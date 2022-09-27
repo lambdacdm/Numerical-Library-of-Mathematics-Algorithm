@@ -16,6 +16,8 @@ std::function<DO(DS)> DSolve(std::function<DO(DS, DO)>, const pair<DS, DO> &, st
 template <class DS, class DO>
 std::function<DO(DS)> DSolve(std::function<DO(DS, DO)>, const pair<DS, DO> &);
 
+//-----定义部分-----
+
 //常微分方程
 template<class DS,class DO,class DP> DO Iteration(const DP &phi,const pair<DS,DO> &initial,DS x,int n)
 {
