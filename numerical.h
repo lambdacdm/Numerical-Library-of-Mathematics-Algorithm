@@ -349,6 +349,23 @@ template<class DB> DB Matrix<DB>::operator()(int r) const
 {
     return (*this)(r,0);
 }
+template<class DB> const vector<DB>& Matrix<DB>::operator[](int r)
+{
+    if(r>=row_num)
+    {
+        cerr << "错误：矩阵下标越界" << '\n';
+        return value[0];
+    }
+    return value[r];
+}
+template<class DB> int RowSize(const Matrix<DB> &a)
+{
+    return a.row_num;
+}
+template<class DB> int ColumnSize(const Matrix<DB> &a)
+{
+    return a.column_num;
+}
 template <class DB> bool operator==(const Matrix<DB> &A, const Matrix<DB> &B)
 {
     int r=A.row_num;
@@ -696,14 +713,6 @@ template<class DB> Matrix<DB> Eye(int n)
         e.value[i][i] = 1;
     }
     return e;
-}
-template<class DB> int RowSize(const Matrix<DB> &a)
-{
-    return a.row_num;
-}
-template<class DB> int ColumnSize(const Matrix<DB> &a)
-{
-    return a.column_num;
 }
 template <class DB> void Resize(Matrix<DB> &A,int r,int c)
 {
