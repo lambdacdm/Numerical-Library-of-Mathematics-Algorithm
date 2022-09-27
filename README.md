@@ -1,4 +1,4 @@
-# Numerical Mathematics Algorithm Library
+# Numerical Library of Mathematics Algorithm
 ## Overview 概况
 这是一个C++实现的简单的数学库，集合了基础的矩阵运算、方程求解、 插值拟合、数值微积分、微分方程求解、画图等操作。
 ## Development Environment 开发环境
