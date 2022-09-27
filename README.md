@@ -50,16 +50,18 @@ g++ -std=c++14 main.cpp
 
 ### 数值库 numerical.h 命名空间 nmr
 依赖多项式库与线性代数库
+* 求导数 —— 中心差商法
 * 代数方程(组)求解 —— 牛顿迭代法
 * 插值 —— 分段线性插值
 * 带导数插值 —— 分段两点三次埃尔米特插值
 * 拟合 —— 最小二乘法
 * 函数逼近 —— 最小二乘法
 * 定积分 —— Romberg算法
-* 求导数 —— 中心差商法
+
+### 常微分方程库 ODE.h 命名空间 ode
 * 常微分方程(组)求解 —— 预测-校正的Milne-Hamming公式
 
-### 优化库 optimization.h 命名空间 opt
+### 优化库 optimization.h 命名空间 
 依赖线性代数库
 * 无约束优化 —— BFGS方法
 * 约束优化 —— 增广拉格朗日函数法
@@ -97,6 +99,6 @@ g++ -std=c++14 main.cpp
 * 加入新的求解常微分方程（组）的方法
 
 ## License 许可声明
-本仓库遵循 GPL-3.0 license 许可。
+本仓库采用 GPL-3.0 license 许可。
 
 一个例外是，本仓库中那些属于旧仓库[numerical library](https://github.com/lambdacdm/numerical-library)的代码部分不受任何许可要求。
