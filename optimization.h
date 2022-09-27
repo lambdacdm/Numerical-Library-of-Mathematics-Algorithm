@@ -70,8 +70,8 @@ template<class OP> Matrix<OP> Gradient(const function<OP(Matrix<OP>)> &f, const 
     {
         Matrix<OP> x1 = x;
         Matrix<OP> x2 = x;
-        x1(i, 0) = Get(x, i, 0) - h;
-        x2(i, 0) = Get(x, i, 0) + h;
+        x1(i, 0) = x(i, 0) - h;
+        x2(i, 0) = x(i, 0) + h;
         df(i, 0) = (f(x2) - f(x1)) / (2*h);
     }
     return df;
@@ -86,8 +86,8 @@ template<class OP> Matrix<OP> GradientT(const function<OP(Matrix<OP>)> &f, const
     {
         Matrix<OP> x1 = x;
         Matrix<OP> x2 = x;
-        x1(i, 0) = Get(x, i, 0) - h;
-        x2(i, 0) = Get(x, i, 0) + h;
+        x1(i, 0) = x(i, 0) - h;
+        x2(i, 0) = x(i, 0) + h;
         df(0, i) = (f(x2) - f(x1)) / twoh;
     }
     return df;
@@ -102,8 +102,8 @@ template<class OP> Matrix<OP> Hessian(const function<OP(Matrix<OP>)> &f, const M
     {
         Matrix<OP> x1 = x;
         Matrix<OP> x2 = x;
-        x1(i, 0) = Get(x, i, 0) + twoh;
-        x2(i, 0) = Get(x, i, 0) - twoh;
+        x1(i, 0) = x(i, 0) + twoh;
+        x2(i, 0) = x(i, 0) - twoh;
         H(i, i) = ((f(x1) - f(x)) / twoh + (f(x2) - f(x)) / twoh) / twoh;
         for (int j = i + 1; j < n;++j)
         {
@@ -111,16 +111,16 @@ template<class OP> Matrix<OP> Hessian(const function<OP(Matrix<OP>)> &f, const M
             Matrix<OP> x2 = x;
             Matrix<OP> x3 = x;
             Matrix<OP> x4 = x;
-            x1(i, 0) = Get(x, i, 0) + h; x1(j, 0) = Get(x, j, 0) + h;
-            x2(i, 0) = x1(i,0); x2(j, 0) = Get(x, j, 0) - h;
-            x3(i, 0) = Get(x, i, 0) - h; x3(j, 0) = x1(j, 0);
+            x1(i, 0) = x(i, 0) + h; x1(j, 0) = x(j, 0) + h;
+            x2(i, 0) = x1(i,0); x2(j, 0) = x(j, 0) - h;
+            x3(i, 0) = x(i, 0) - h; x3(j, 0) = x1(j, 0);
             x4(i, 0) = x3(i,0); x4(j, 0) = x2(j, 0);
             H(i, j) = ((f(x1) - f(x2)) / twoh + (f(x4) - f(x3)) / twoh) / twoh;
         }
     }
     for (int i = 1; i < n;++i)
         for (int j = 0; j < i;++j)
-            H(i, j) = Get(H, j, i);
+            H(i, j) = H(j, i);
     return H;
 }
 
@@ -135,7 +135,7 @@ const Matrix<OP> &x, const Matrix<OP> &direction, OP stepsize, OP gamma, OP c)
 {
     const uint8_t times = 10;
     uint8_t cnt = 0;
-    while(f(x + (stepsize * direction)) > f(x)+c*stepsize*Get(GradientT<OP>(f,x)*direction,0,0)
+    while(f(x + (stepsize * direction)) > f(x)+c*stepsize*(GradientT<OP>(f,x)*direction)(0,0)
     && cnt<times)
     {
         stepsize = gamma * stepsize;
@@ -154,7 +154,7 @@ const Matrix<OP> &x, const Matrix<OP> &direction, OP stepsize, OP c)
     const uint8_t times = 10;
     uint8_t cnt = 0;
     OP fx = f(x);
-    OP fd = Get(GradientT<OP>(f, x) * direction, 0, 0);
+    OP fd = (GradientT<OP>(f, x) * direction)(0, 0);
     OP lhs = f(x + stepsize * direction);
     OP afd = stepsize * fd;
     OP left_end = OP(0);
@@ -189,7 +189,7 @@ const Matrix<OP> &x, const Matrix<OP> &direction, OP stepsize, OP c1, OP c2, boo
 {
     const uint8_t times = 10;
     uint8_t cnt = 0;
-    OP fd = Get(GradientT<OP>(f, x) * direction, 0, 0);
+    OP fd = (GradientT<OP>(f, x) * direction)(0, 0);
     Matrix<OP> xad = x + stepsize * direction;
     OP left_end = OP(0);
     OP right_end = OP(4) * stepsize;
@@ -200,12 +200,12 @@ const Matrix<OP> &x, const Matrix<OP> &direction, OP stepsize, OP c1, OP c2, boo
             right_end = stepsize;
             stepsize = (left_end + right_end) / OP(2);
         }
-        else if (!strong && Get(GradientT<OP>(f, xad)*direction,0,0) < c2 * fd)
+        else if (!strong && Abs((GradientT<OP>(f, xad)*direction)(0,0)) < c2 * fd)
         {
             left_end = stepsize;
             stepsize = std::min(OP(2) * stepsize, (left_end + right_end) / OP(2));
         }
-        else if (strong && Abs(Get(GradientT<OP>(f, xad)*direction,0,0)) > -c2 * fd)
+        else if (strong && Abs((GradientT<OP>(f, xad)*direction)(0,0)) > -c2 * fd)
         {
             left_end = stepsize;
             stepsize = std::min(OP(2) * stepsize, (left_end + right_end) / OP(2));
@@ -526,7 +526,7 @@ const Matrix<OP> &x_pre, const Matrix<OP> &gradient, const Matrix<OP> &gradient_
     Matrix<OP> y = gradient - gradient_pre;
     Matrix<OP> M = s - H * y;
     Matrix<OP> MT = Transpose(M);
-    return H + (OP(1) / Get(MT * y, 0, 0)) * (M * MT);
+    return H + (OP(1) / (MT * y)(0, 0)) * (M * MT);
 }
 template<class OP> Matrix<OP> SR1(const function<OP(Matrix<OP>)> &f, 
 const Matrix<OP> &initial_x, OP epsilon)
@@ -540,8 +540,8 @@ const Matrix<OP> &x_pre, const Matrix<OP> &gradient, const Matrix<OP> &gradient_
     Matrix<OP> y = gradient - gradient_pre;
     Matrix<OP> Hy = H * y;
     Matrix<OP> yT = Transpose(y);
-    return H - (OP(1) / Get(yT * Hy, 0, 0)) * Hy * Transpose(Hy) + 
-                (OP(1) / Get(yT * s, 0, 0)) * s * Transpose(s);
+    return H - (OP(1) / (yT * Hy)(0, 0)) * Hy * Transpose(Hy) + 
+                (OP(1) / (yT * s)(0, 0)) * s * Transpose(s);
 }
 template<class OP> Matrix<OP> DFP(const function<OP(Matrix<OP>)> &f, 
 const Matrix<OP> &initial_x, OP epsilon)

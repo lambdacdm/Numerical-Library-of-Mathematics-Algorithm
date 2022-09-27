@@ -52,7 +52,9 @@ public:
 
     Matrix<DM> &operator=(const Matrix<DM> &);
     DM &operator()(int,int);
+    DM operator()(int, int) const;
     DM &operator()(int);
+    DM operator()(int) const;
     const vector<DM> &operator[](int);
     template <class DB> friend bool operator==(const Matrix<DB> &, const Matrix<DB> &);
     template<class DB> friend ostream &operator<< (ostream &,const Matrix<DB> &);
@@ -330,18 +332,22 @@ template<class DB> DB& Matrix<DB>::operator()(int r,int c)
     }
     return value[r][c];
 }
+template<class DB> DB Matrix<DB>::operator()(int r,int c) const
+{
+    if(r>=row_num || c>=column_num)
+    {																	
+        cerr << "错误：矩阵下标越界" << '\n';
+        return value[0][0];
+    }
+    return value[r][c];
+}
 template<class DB> DB& Matrix<DB>::operator()(int r)
 {
     return (*this)(r,0);
 }
-template<class DB> const vector<DB>& Matrix<DB>::operator[](int r)
+template<class DB> DB Matrix<DB>::operator()(int r) const
 {
-    if(r>=row_num)
-    {
-        cerr << "错误：矩阵下标越界" << '\n';
-        return value[0];
-    }
-    return value[r];
+    return (*this)(r,0);
 }
 template <class DB> bool operator==(const Matrix<DB> &A, const Matrix<DB> &B)
 {
