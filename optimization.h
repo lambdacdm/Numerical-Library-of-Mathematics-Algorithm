@@ -1,7 +1,7 @@
 #ifndef OPTIMIZATION_H
 #define OPTIMIZATION_H
-#include "numerical.h"
-using namespace nmr;
+#include "linearalgebra.h"
+using namespace lag;
 
 // 参考资料：
 // 理论：刘浩洋、户将、李勇锋、文再文《最优化：建模、算法与理论》

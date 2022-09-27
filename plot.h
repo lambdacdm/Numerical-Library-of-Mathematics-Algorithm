@@ -1,7 +1,7 @@
 #ifndef PLOT_H
 #define PLOT_H
-#include "numerical.h"
-using namespace nmr;
+#include "linearalgebra.h"
+using namespace lag;
 
 namespace plt{
 
