@@ -1,4 +1,4 @@
-// version 0.7.5 pre-release
+// version 0.7.5 release
 #ifndef MATHALGORITHM_H
 #define MATHALGORITHM_H
 #include "numbertheory.h"

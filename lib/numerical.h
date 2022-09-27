@@ -658,17 +658,17 @@ template <class DD> DD D(std::function<DD(DD)> f,DD x,string str)
 {
     if(str=="center")
     {
-        const DD h = 1e-7;
+        const DD h = 1e-8;
         return (f(x + h) - f(x - h)) / (2 * h);
     }
     if(str=="forward")
     {
-        const DD h = 1e-7;
+        const DD h = 1e-8;
         return (f(x + h) - f(x))/h;
     }
     if(str=="backward")
     {
-        const DD h = 1e-7;
+        const DD h = 1e-8;
         return (f(x) - f(x-h))/h;
     }
     cerr << "错误：没有定义该方法。" << '\n';
@@ -699,7 +699,7 @@ template<class DD> DD D(std::function<DD(Matrix<DD>)>f,int n,const Matrix<DD> &x
         cerr << "错误：求偏导的分量越界" << '\n';
         return f(x);
     }
-    const DD h=1e-7;
+    const DD h=1e-8;
     auto y=x;
     y(n,0)=Get(x,n,0)+h;
     return (f(y) - f(x)) / h;
