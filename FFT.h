@@ -1,8 +1,7 @@
 #ifndef FFT_H
 #define FFT_H
-#include<iostream>
+#include "core.h"
 #include<vector>
-#include<cmath>
 #include<cstdlib>
 #include<complex>
 #include<algorithm>
@@ -10,12 +9,9 @@
 #include<cstdint>
 using std::complex;
 using std::string;
-using std::vector;
+using namespace cor;
 
 namespace fft{
-
-//-----常量部分-----
-template<class DC> const DC Pi = 3.1415926535897932;
 
 //-----定义部分-----
 

@@ -14,6 +14,7 @@ namespace cor{
 
 //-----常量部分-----
 const double Machine_Epsilon = pow(2, -52);
+template<class DC> const DC Pi = 3.1415926535897932;
 
 //-----声明部分-----
 
