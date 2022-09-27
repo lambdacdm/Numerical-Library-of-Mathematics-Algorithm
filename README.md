@@ -62,14 +62,22 @@ g++ -std=c++14 main.cpp
 依赖数值库
 * 常微分方程(组)求解 —— 预测-校正的Milne-Hamming公式
 
-### 优化库 optimization.h 命名空间 
+### 优化库 optimization.h 命名空间 opt
 依赖线性代数库
 * 无约束优化 —— BFGS方法
 * 约束优化 —— 增广拉格朗日函数法
 
+### 概率论库 probability.h 命名空间 prb
+依赖数值库
+* 提供随机变量及其分布的基础操作
+
 ### 绘图库 plot.h 命名空间 plt
 依赖线性代数库
 * 提供函数作图支持
+
+### 总库 mathalgorithm.h 命名空间 mal
+依赖上述所有头文件
+* include上述所有数学库
 
 ## Change Log 更新日志
 目前已发布的最新版本是v0.7.5，详见releases
