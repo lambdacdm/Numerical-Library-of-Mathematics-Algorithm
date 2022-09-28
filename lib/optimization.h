@@ -424,7 +424,7 @@ const Matrix<OP> &initial_x, OP epsilon)
     Matrix<OP> hessian = Hessian<OP>(f, x);
     while(Norm(gradient, "Frobenius")>epsilon && cnt<times)
     {
-        x = x - Inverse<OP>(hessian) * gradient;
+        x = x - LinearSolve(hessian, gradient);
         gradient = Gradient<OP>(f, x);
         hessian = Hessian<OP>(f, x);
         ++cnt;
